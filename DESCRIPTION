@@ -1,10 +1,15 @@
 Package: BBD
-Title: What the Package Does (One Line, Title Case)
+Title: Ferramentas para Planejamento Box Behnken no R
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("Wanderley", "Xavier Pereira", email = "wander.wx@gmail.com", role = c("aut", "cre"))
+Description: Funcoes para importar dados Box Behnken, ajustar modelo quadratico, gerar ANOVA, metricas e graficos de superficie e Pareto.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Imports:
+    grDevices,
+    graphics,
+    stats,
+    utils
