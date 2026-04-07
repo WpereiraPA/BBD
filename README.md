@@ -1,25 +1,16 @@
+## Autoria
 
-# BBD
+Desenvolvido por Wanderley Xavier Pereira.
 
-<!-- badges: start -->
-<!-- badges: end -->
+## Titularidade
 
-The goal of BBD is to ...
+Titularidade compartilhada entre:
 
-## Installation
+- Wanderley Xavier Pereira  
+- Centro Federal de Educação Tecnológica de Minas Gerais (CEFET-MG)
 
-You can install the development version of BBD like so:
+## Apoio institucional
 
-``` r
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
-```
-
-## Example
-
-This is a basic example which shows you how to solve a common problem:
-
-``` r
-library(BBD)
-## basic example code
-```
-
+O desenvolvimento deste pacote contou com apoio institucional do  
+Centro Federal de Educação Tecnológica de Minas Gerais (CEFET-MG),  
+no âmbito das atividades acadêmicas do autor, sem financiamento específico.

@@ -1,8 +1,8 @@
 #' Encontrar ponto otimo previsto
 #'
-#' @param fit objeto retornado por dbb_fit()
+#' @param fit objeto retornado por bbd_fit()
 #' @export
-otimo_dbb <- function(fit) {
+otimo_bbd <- function(fit) {
 
   modelo <- fit$modelo
   fatores <- fit$fatores

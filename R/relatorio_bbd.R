@@ -1,9 +1,9 @@
 #' Relatorio estatistico completo no padrao brasileiro
 #'
-#' @param fit objeto ajustado por dbb_fit()
+#' @param fit objeto ajustado por bbd_fit()
 #' @return lista com ANOVA, coeficientes, R2 e R2 ajustado formatados
 #' @export
-relatorio_dbb <- function(fit){
+relatorio_bbd <- function(fit){
 
   modelo <- fit$modelo
 

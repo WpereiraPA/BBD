@@ -2,7 +2,7 @@
 #'
 #' @return data.frame
 #' @export
-read_clipboard_dbb <- function() {
+read_clipboard_bbd <- function() {
   dados <- utils::read.table(
     "clipboard",
     header = TRUE,

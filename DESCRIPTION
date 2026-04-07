@@ -2,7 +2,10 @@ Package: BBD
 Title: Ferramentas para Planejamento Box Behnken no R
 Version: 0.0.0.9000
 Authors@R: 
-    person("Wanderley", "Xavier Pereira", email = "wander.wx@gmail.com", role = c("aut", "cre"))
+    c(
+      person("Wanderley", "Xavier Pereira", email = "wander.wx@gmail.com", role = c("aut", "cre")),
+      person("Centro Federal de Educação Tecnológica de Minas Gerais (CEFET-MG)", role = "cph")
+    )
 Description: Funcoes para importar dados Box Behnken, ajustar modelo quadratico, gerar ANOVA, metricas e graficos de superficie e Pareto.
 License: MIT + file LICENSE
 Encoding: UTF-8
