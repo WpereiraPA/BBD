@@ -7,6 +7,7 @@
 #' @param x1 nome do primeiro fator.
 #' @param x2 nome do segundo fator.
 #' @param n número de pontos da grade. Padrão \code{140}.
+#' @param mostrar_pontos se TRUE, exibe os pontos experimentais no gráfico.
 #'
 #' @return Invisivelmente, uma lista com grade e matriz de predições.
 #' @export

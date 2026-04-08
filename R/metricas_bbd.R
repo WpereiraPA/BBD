@@ -39,7 +39,7 @@ metricas_bbd <- function(fit) {
       unname(fstat[2]),
       unname(fstat[3]),
       unname(p_modelo),
-      nobs(fit$modelo)
+      stats::nobs(fit$modelo)
     )
   )
 

@@ -14,6 +14,8 @@ contorno_bbd(fit, x1, x2, n = 140, mostrar_pontos = FALSE)
 \item{x2}{nome do segundo fator.}
 
 \item{n}{número de pontos da grade. Padrão \code{140}.}
+
+\item{mostrar_pontos}{se TRUE, exibe os pontos experimentais no gráfico.}
 }
 \value{
 Invisivelmente, uma lista com grade e matriz de predições.

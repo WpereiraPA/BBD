@@ -15,7 +15,7 @@ anova_bbd <- function(fit) {
     stop("Objeto 'fit' inválido. Use um objeto retornado por 'bbd_fit()'.")
   }
 
-  tab <- as.data.frame(anova(fit$modelo))
+  tab <- as.data.frame(stats::anova(fit$modelo))
   tab$Termo <- rownames(tab)
   rownames(tab) <- NULL
 

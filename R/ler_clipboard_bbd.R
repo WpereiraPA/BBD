@@ -5,7 +5,7 @@
 #' @return data.frame com os dados importados
 #' @export
 ler_clipboard_bbd <- function() {
-  dados <- read.table(
+  dados <- utils::read.table(
     file = "clipboard",
     header = TRUE,
     sep = "\t",
