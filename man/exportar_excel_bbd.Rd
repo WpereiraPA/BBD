@@ -17,12 +17,12 @@ exportar_excel_bbd(
 
 \item{arquivo}{nome do arquivo Excel}
 
-\item{usar_desktop}{se TRUE, salva na Área de Trabalho, em uma pasta
+\item{usar_desktop}{se TRUE, salva na Area de Trabalho, em uma pasta
 chamada BBD_Resultados}
 
-\item{alpha}{nível de significância para destacar efeitos}
+\item{alpha}{nivel de significancia para destacar efeitos}
 
-\item{fatores}{vetor opcional com os fatores a considerar nos gráficos;
+\item{fatores}{vetor opcional com os fatores a considerar nos graficos;
 se NULL, usa fit$fatores}
 }
 \value{

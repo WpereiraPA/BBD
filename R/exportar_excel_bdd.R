@@ -2,10 +2,10 @@
 #'
 #' @param fit objeto da classe bbd_fit
 #' @param arquivo nome do arquivo Excel
-#' @param usar_desktop se TRUE, salva na Área de Trabalho, em uma pasta
+#' @param usar_desktop se TRUE, salva na Area de Trabalho, em uma pasta
 #'   chamada BBD_Resultados
-#' @param alpha nível de significância para destacar efeitos
-#' @param fatores vetor opcional com os fatores a considerar nos gráficos;
+#' @param alpha nivel de significancia para destacar efeitos
+#' @param fatores vetor opcional com os fatores a considerar nos graficos;
 #'   se NULL, usa fit$fatores
 #'
 #' @return invisivelmente, o caminho do arquivo gerado
@@ -21,11 +21,11 @@ exportar_excel_bbd <- function(fit,
   }
 
   if (!requireNamespace("openxlsx", quietly = TRUE)) {
-    stop("Instale o pacote 'openxlsx' para usar esta função.")
+    stop("Instale o pacote 'openxlsx' para usar esta funcao.")
   }
 
   if (!is.character(arquivo) || length(arquivo) != 1 || is.na(arquivo) || trimws(arquivo) == "") {
-    stop("O argumento 'arquivo' deve ser uma string não vazia.")
+    stop("O argumento 'arquivo' deve ser uma string nao vazia.")
   }
 
   if (!grepl("\\.xlsx$", arquivo, ignore.case = TRUE)) {
@@ -39,7 +39,7 @@ exportar_excel_bbd <- function(fit,
   fatores <- as.character(fatores)
 
   if (length(fatores) < 2) {
-    stop("São necessários pelo menos dois fatores para exportar superfícies e contornos.")
+    stop("Sao necessarios pelo menos dois fatores para exportar superficies e contornos.")
   }
 
   if (!all(fatores %in% fit$fatores)) {
@@ -66,10 +66,75 @@ exportar_excel_bbd <- function(fit,
   wb <- openxlsx::createWorkbook()
 
   # =======================
-  # MÉTRICAS
+  # ESTILOS
+  # =======================
+  estilo_cabecalho <- openxlsx::createStyle(
+    textDecoration = "bold",
+    halign = "center",
+    valign = "center",
+    border = "TopBottomLeftRight",
+    fgFill = "#D9EAF7"
+  )
+
+  estilo_corpo <- openxlsx::createStyle(
+    halign = "center",
+    valign = "center",
+    border = "TopBottomLeftRight"
+  )
+
+  estilo_significativo <- openxlsx::createStyle(
+    halign = "center",
+    valign = "center",
+    border = "TopBottomLeftRight",
+    fgFill = "#FFF2CC",
+    fontColour = "#C00000",
+    textDecoration = "bold"
+  )
+
+  aplicar_estilo_tabela <- function(nome_aba, df) {
+
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = nome_aba,
+      style = estilo_cabecalho,
+      rows = 1,
+      cols = 1:ncol(df),
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+
+    if (nrow(df) > 0) {
+      openxlsx::addStyle(
+        wb = wb,
+        sheet = nome_aba,
+        style = estilo_corpo,
+        rows = 2:(nrow(df) + 1),
+        cols = 1:ncol(df),
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+    }
+
+    openxlsx::freezePane(wb, nome_aba, firstRow = TRUE)
+    openxlsx::setColWidths(wb, nome_aba, cols = 1:ncol(df), widths = "auto")
+  }
+
+  # =======================
+  # DADOS
+  # =======================
+  if (!is.null(fit$dados) && is.data.frame(fit$dados)) {
+    dados_df <- fit$dados
+
+    openxlsx::addWorksheet(wb, "Dados")
+    openxlsx::writeData(wb, "Dados", dados_df)
+    aplicar_estilo_tabela("Dados", dados_df)
+  }
+
+  # =======================
+  # METRICAS
   # =======================
   met_df <- data.frame(
-    Métrica = c("R²", "R² ajustado", "Erro padrão residual"),
+    Metrica = c("R2", "R2 ajustado", "Erro padrao residual"),
     Valor = c(
       fit$r2,
       fit$r2_ajustado,
@@ -78,20 +143,22 @@ exportar_excel_bbd <- function(fit,
     check.names = FALSE
   )
 
-  openxlsx::addWorksheet(wb, enc2utf8("Métricas"))
-  openxlsx::writeData(wb, enc2utf8("Métricas"), met_df)
-  openxlsx::freezePane(wb, enc2utf8("Métricas"), firstRow = TRUE)
-  openxlsx::setColWidths(wb, enc2utf8("Métricas"), cols = 1:ncol(met_df), widths = "auto")
+  openxlsx::addWorksheet(wb, "Metricas")
+  openxlsx::writeData(wb, "Metricas", met_df)
+  aplicar_estilo_tabela("Metricas", met_df)
 
   # =======================
   # ANOVA
   # =======================
   anova_df <- anova_bbd(fit)
 
+  if ("Df" %in% names(anova_df)) {
+    names(anova_df)[names(anova_df) == "Df"] <- "GL"
+  }
+
   openxlsx::addWorksheet(wb, "ANOVA")
   openxlsx::writeData(wb, "ANOVA", anova_df)
-  openxlsx::freezePane(wb, "ANOVA", firstRow = TRUE)
-  openxlsx::setColWidths(wb, "ANOVA", cols = 1:ncol(anova_df), widths = "auto")
+  aplicar_estilo_tabela("ANOVA", anova_df)
 
   # =======================
   # COEFICIENTES
@@ -99,10 +166,9 @@ exportar_excel_bbd <- function(fit,
   coef_df <- coeficientes_bbd(fit)
   coef_df$Termo <- formatar_termo(coef_df$Termo)
 
-  openxlsx::addWorksheet(wb, enc2utf8("Coeficientes"))
-  openxlsx::writeData(wb, enc2utf8("Coeficientes"), coef_df)
-  openxlsx::freezePane(wb, enc2utf8("Coeficientes"), firstRow = TRUE)
-  openxlsx::setColWidths(wb, enc2utf8("Coeficientes"), cols = 1:ncol(coef_df), widths = "auto")
+  openxlsx::addWorksheet(wb, "Coeficientes")
+  openxlsx::writeData(wb, "Coeficientes", coef_df)
+  aplicar_estilo_tabela("Coeficientes", coef_df)
 
   # =======================
   # EFEITOS
@@ -110,26 +176,24 @@ exportar_excel_bbd <- function(fit,
   efeitos_df <- tabela_efeitos_bbd(fit, alpha = alpha)
   efeitos_df$Termo <- formatar_termo(efeitos_df$Termo)
 
-  openxlsx::addWorksheet(wb, enc2utf8("Efeitos"))
-  openxlsx::writeData(wb, enc2utf8("Efeitos"), efeitos_df)
-  openxlsx::freezePane(wb, enc2utf8("Efeitos"), firstRow = TRUE)
-  openxlsx::setColWidths(wb, enc2utf8("Efeitos"), cols = 1:ncol(efeitos_df), widths = "auto")
+  openxlsx::addWorksheet(wb, "Efeitos")
+  openxlsx::writeData(wb, "Efeitos", efeitos_df)
+  aplicar_estilo_tabela("Efeitos", efeitos_df)
 
-  style_sig <- openxlsx::createStyle(bgFill = "#C6EFCE")
-  col_sig <- which(names(efeitos_df) == "Significativo")
+  if ("Significativo" %in% names(efeitos_df) && nrow(efeitos_df) > 0) {
+    linhas_sig <- which(efeitos_df$Significativo == "Sim")
 
-  if (length(col_sig) == 1 && nrow(efeitos_df) > 0) {
-    col_letra <- openxlsx::int2col(col_sig)
-
-    openxlsx::conditionalFormatting(
-      wb,
-      sheet = enc2utf8("Efeitos"),
-      cols = 1:ncol(efeitos_df),
-      rows = 2:(nrow(efeitos_df) + 1),
-      rule = paste0("$", col_letra, '2="Sim"'),
-      style = style_sig,
-      type = "expression"
-    )
+    if (length(linhas_sig) > 0) {
+      openxlsx::addStyle(
+        wb = wb,
+        sheet = "Efeitos",
+        style = estilo_significativo,
+        rows = linhas_sig + 1,
+        cols = 1:ncol(efeitos_df),
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+    }
   }
 
   # =======================
@@ -145,9 +209,17 @@ exportar_excel_bbd <- function(fit,
   openxlsx::writeData(
     wb,
     "Pareto",
-    enc2utf8("Gráfico de Pareto dos efeitos"),
+    enc2utf8("Grafico de Pareto dos efeitos"),
     startRow = 1,
     startCol = 2
+  )
+  openxlsx::addStyle(
+    wb = wb,
+    sheet = "Pareto",
+    style = estilo_cabecalho,
+    rows = 1,
+    cols = 2,
+    stack = TRUE
   )
   openxlsx::insertImage(
     wb, "Pareto", tmp_pareto,
@@ -156,7 +228,7 @@ exportar_excel_bbd <- function(fit,
   )
 
   # =======================
-  # SUPERFÍCIES E CONTORNOS
+  # SUPERFICIES E CONTORNOS
   # =======================
   pares <- utils::combn(fatores, 2, simplify = FALSE)
   arquivos_tmp <- character(0)
@@ -186,7 +258,7 @@ exportar_excel_bbd <- function(fit,
       y_plot <- ori[2]
 
       # -----------------------
-      # SUPERFÍCIE
+      # SUPERFICIE
       # -----------------------
       tmp_sup <- tempfile(fileext = ".png")
       arquivos_tmp <- c(arquivos_tmp, tmp_sup)
@@ -200,9 +272,17 @@ exportar_excel_bbd <- function(fit,
       openxlsx::writeData(
         wb,
         aba_sup,
-        enc2utf8(paste0("Superfície de resposta: ", x_plot, " × ", y_plot)),
+        enc2utf8(paste0("Superficie de resposta: ", x_plot, " × ", y_plot)),
         startRow = 1,
         startCol = 2
+      )
+      openxlsx::addStyle(
+        wb = wb,
+        sheet = aba_sup,
+        style = estilo_cabecalho,
+        rows = 1,
+        cols = 2,
+        stack = TRUE
       )
       openxlsx::insertImage(
         wb, aba_sup, tmp_sup,
@@ -226,9 +306,17 @@ exportar_excel_bbd <- function(fit,
       openxlsx::writeData(
         wb,
         aba_cont,
-        enc2utf8(paste0("Gráfico de contorno: ", x_plot, " × ", y_plot)),
+        enc2utf8(paste0("Grafico de contorno: ", x_plot, " × ", y_plot)),
         startRow = 1,
         startCol = 2
+      )
+      openxlsx::addStyle(
+        wb = wb,
+        sheet = aba_cont,
+        style = estilo_cabecalho,
+        rows = 1,
+        cols = 2,
+        stack = TRUE
       )
       openxlsx::insertImage(
         wb, aba_cont, tmp_cont,

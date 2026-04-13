@@ -107,7 +107,7 @@ superficie_bbd <- function(fit, x1, x2, n = 45) {
     zlab = titulo_resposta,
     cex.lab = 1.10,
     cex.axis = 0.85,
-    main = paste("Superfície de Resposta de", titulo_resposta)
+    main = paste("Superfície de Resposta -", titulo_resposta)
   )
 
   invisible(

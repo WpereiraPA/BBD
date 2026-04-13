@@ -29,6 +29,7 @@ Com ele, você pode:
 ```r
 install.packages("remotes")
 remotes::install_github("WpereiraPA/BBD")
+library(BBD)
 ```
 
 ## 🚀 Fluxo de uso
@@ -43,28 +44,27 @@ exportar_matriz_bbd(m)
 ### 2. Importar dados do Excel
 
 ```r
-dados <- ler_clipboard_bbd()
+dados <- read_clipboard_bbd()
 ```
 
 ### 3. Ajustar o modelo
 
 ```r
-fit <- bbd_fit(dados, resposta = "Rend")
+fit <- bbd_fit(dados, resposta = "nome da sua resposta")
+
+# exemplo
+
+fit <- bbd_fit(dados, resposta = "Rendimento")
+
 ```
 
 ### 4. Análise
-
-
 ---
-
-### 4. Análise
-
 ```r
 anova_bbd(fit)
 coeficientes_bbd(fit)
 tabela_efeitos_bbd(fit)
 ```
-
 ### 5. Gráficos
 
 ```r
@@ -72,11 +72,7 @@ pareto_bbd(fit)
 superficie_bbd(fit, "A", "B")
 contorno_bbd(fit, "A", "B")
 ```
-
-### 6. Exportação completa
-
 ---
-
 ### 6. Exportação completa
 
 ```r
@@ -107,11 +103,7 @@ contorno_bbd(fit, "A", "B", mostrar_pontos = TRUE)
 ```
 
 ##  Sobre o Box-Behnken
-
 ---
-
-## 🧠 Sobre o Box-Behnken
-
 
 O planejamento Box-Behnken:
 
@@ -123,11 +115,7 @@ O planejamento Box-Behnken:
 ---
 ##  Exportação de resultados
 
-
 ---
-
-## 📦 Exportação de resultados
-
 
 O pacote gera automaticamente:
 
@@ -145,42 +133,33 @@ O pacote gera automaticamente:
 - (opcional) ponto ótimo
 
 ---
-## 👤 Autoria
+## Authors
 
-Desenvolvido por Wanderley Xavier Pereira.
----
+- Augusto Henrique de Sousa Xavier (augustohpa12@gmail.com)
+- Wanderley Xavier Pereira
 
+## Copyright and institutional context
 
----
+Copyright is shared by:
 
-## 👤 Autoria
+- Augusto Henrique de Sousa Xavier
+- Wanderley Xavier Pereira
+- Centro Federal de Educacao Tecnologica de Minas Gerais (CEFET-MG)
 
-Desenvolvido por Wanderley Xavier Pereira.
+## Development notes
 
----
+This package was developed by the authors with support from artificial intelligence tools for code structuring, review and refinement. All methodological definitions, statistical logic and final implementation decisions are the responsibility of the authors.
 
-## 🏛️ Titularidade
+## Citation and authorship
 
-Titularidade compartilhada entre:
-- Wanderley Xavier Pereira  
-- Centro Federal de Educação Tecnológica de Minas Gerais (CEFET-MG)
+If you use this package in academic, technical or derived work, please cite the original authorship of the BBD package.
 
----
-##  Apoio institucional
+Citation of the original package is strongly encouraged in cases of use, modification, adaptation or extension.
 
----
+## Institutional support
 
-## 🤝 Apoio institucional
-
-
-O desenvolvimento deste pacote contou com apoio institucional do  
-Centro Federal de Educação Tecnológica de Minas Gerais (CEFET-MG),  
-no âmbito das atividades acadêmicas do autor, sem financiamento específico.
-
----
+The development of this package was carried out in an academic context with institutional support from the Centro Federal de Educacao Tecnologica de Minas Gerais (CEFET-MG).
 
 ##  Status
-
-## 🚧 Status
 
 Pacote em desenvolvimento contínuo com foco em aplicação prática e uso didático.

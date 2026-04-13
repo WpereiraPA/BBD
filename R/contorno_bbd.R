@@ -103,7 +103,7 @@ contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
     color.palette = pal,
     xlab = x1,
     ylab = x2,
-    main = paste("Gráfico de Contorno da", titulo_resposta),
+    main = paste("Gráfico de Contorno -", titulo_resposta),
     key.title = graphics::title(main = titulo_resposta, cex.main = 0.82),
     key.axes = graphics::axis(4, cex.axis = 0.9),
     plot.axes = {

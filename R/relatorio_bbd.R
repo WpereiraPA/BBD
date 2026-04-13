@@ -8,6 +8,9 @@ relatorio_bbd <- function(fit){
   modelo <- fit$modelo
 
   anova_tab <- as.data.frame(stats::anova(modelo))
+  if ("Df" %in% names(anova_tab)) {
+    names(anova_tab)[names(anova_tab) == "Df"] <- "GL"
+  }
   coef_tab  <- as.data.frame(summary(modelo)$coefficients)
 
   r2 <- summary(modelo)$r.squared

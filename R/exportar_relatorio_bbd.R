@@ -61,7 +61,7 @@ exportar_relatorio_bbd <- function(fit,
 
   an$Termo <- rownames(an)
   rownames(an) <- NULL
-  an <- an[, c("Termo", "Df", "Sum Sq", "Mean Sq", "F value", "Pr(>F)")]
+  an <- an[, c("Termo", "DV", "Sum Sq", "Mean Sq", "F value", "Pr(>F)")]
 
   beta <- stats::coef(fit$modelo)
   nomes <- names(beta)
@@ -158,6 +158,7 @@ exportar_relatorio_bbd <- function(fit,
 
   an_out <- an
   an_out$Df <- format(an_out$Df, trim = TRUE)
+  names(an_out)[names(an_out) == "Df"] <- "GL"
   an_out$`Sum Sq` <- fmt(an_out$`Sum Sq`, 6)
   an_out$`Mean Sq` <- fmt(an_out$`Mean Sq`, 6)
   an_out$`F value` <- ifelse(is.na(an_out$`F value`), "", fmt(an_out$`F value`, 4))
