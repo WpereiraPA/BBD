@@ -136,7 +136,7 @@ O pacote gera automaticamente:
 ## Authors
 
 - Augusto Henrique de Sousa Xavier (augustohpa12@gmail.com)
-- Wanderley Xavier Pereira
+- Wanderley Xavier Pereira (wander.wx@gmail.com)
 
 ## Copyright and institutional context
 
