@@ -3,7 +3,7 @@ Pacote em R para geração, análise e visualização de planejamentos Box-Behnk
 
 ---
 
-## 📌 O que o pacote faz
+##  O que o pacote faz
 
 O pacote BBD foi desenvolvido para facilitar a aplicação prática de planejamentos Box-Behnken, integrando todas as etapas do experimento em um único fluxo.
 
@@ -19,20 +19,21 @@ Com ele, você pode:
   - Pareto
   - superfície de resposta
   - contorno
-- exportar relatório automático
-- exportar resultados completos para Excel
+- calcular o ponto ótimo estimado
+- exportar resultados para Excel (versão rápida e completa)
 
 ---
 
-## ⚙️ Instalação
+## Instalação
 
 ```r
 install.packages("remotes")
 remotes::install_github("WpereiraPA/BBD")
 library(BBD)
 ```
+---
 
-## 🚀 Fluxo de uso
+##  Fluxo de uso
 
 ### 1. Gerar matriz experimental
 
@@ -40,6 +41,7 @@ library(BBD)
 m <- matriz_bbd(k = 3)
 exportar_matriz_bbd(m)
 ```
+---
 
 ### 2. Importar dados do Excel
 
@@ -47,25 +49,37 @@ exportar_matriz_bbd(m)
 dados <- read_clipboard_bbd()
 ```
 
+Após executar, verifique se os dados foram carregados corretamente no Environment.
+
+---
+
 ### 3. Ajustar o modelo
 
 ```r
 fit <- bbd_fit(dados, resposta = "nome da sua resposta")
 
 # exemplo
-
 fit <- bbd_fit(dados, resposta = "Rendimento")
-
 ```
+---
 
 ### 4. Análise
----
+
 ```r
 anova_bbd(fit)
 coeficientes_bbd(fit)
 tabela_efeitos_bbd(fit)
 ```
-### 5. Gráficos
+---
+
+### 5. Ponto ótimo
+
+```r
+otimo_bbd(fit)
+```
+---
+
+### 6. Gráficos
 
 ```r
 pareto_bbd(fit)
@@ -73,15 +87,57 @@ superficie_bbd(fit, "A", "B")
 contorno_bbd(fit, "A", "B")
 ```
 ---
-### 6. Exportação completa
+
+## Exportação para Excel
+
+O pacote permite duas formas de exportação:
+
+---
+
+###  Exportação rápida
 
 ```r
 exportar_excel_bbd(fit)
-exportar_relatorio_bbd(fit)
 ```
+
+Inclui:
+
+- Dados  
+- Métricas  
+- ANOVA  
+- Coeficientes  
+- Efeitos  
+- Ponto ótimo  
+
+✔ Ideal para análise e documentação rápida
+
 ---
 
-## 📊 Gráficos
+###  Exportação completa
+
+```r
+exportar_excel_completo_bbd(fit)
+```
+
+Inclui tudo da versão anterior, além de:
+
+- Gráfico de Pareto  
+- Superfícies de resposta  
+- Gráficos de contorno  
+
+✔ Ideal para interpretação visual e apresentação
+
+---
+
+📌 Observação:
+
+- os arquivos são gerados automaticamente com data e hora  
+- evita sobrescrita  
+- facilita rastreabilidade dos resultados  
+
+---
+
+##  Gráficos
 
 ### Pareto
 Identifica os efeitos mais importantes no modelo.
@@ -96,14 +152,12 @@ Representação bidimensional da superfície.
 
 Os quadrados representam os pontos experimentais utilizados no planejamento.
 
-Para exibir:
-
 ```r
 contorno_bbd(fit, "A", "B", mostrar_pontos = TRUE)
 ```
+---
 
 ##  Sobre o Box-Behnken
----
 
 O planejamento Box-Behnken:
 
@@ -113,25 +167,6 @@ O planejamento Box-Behnken:
 - é eficiente para ajuste de modelos quadráticos
 
 ---
-##  Exportação de resultados
-
----
-
-O pacote gera automaticamente:
-
-### Excel
-- métricas
-- ANOVA
-- coeficientes
-- efeitos
-- gráficos
-
-### Relatório
-- resumo estatístico
-- interpretação básica
-- equação do modelo
-- (opcional) ponto ótimo
-
 ---
 ## Authors
 
