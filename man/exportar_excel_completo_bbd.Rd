@@ -11,14 +11,6 @@ exportar_excel_completo_bbd(
   alpha = 0.05,
   fatores = NULL
 )
-
-exportar_excel_completo_bbd(
-  fit,
-  arquivo = NULL,
-  usar_desktop = TRUE,
-  alpha = 0.05,
-  fatores = NULL
-)
 }
 \arguments{
 \item{fit}{objeto da classe bbd_fit}
@@ -35,15 +27,9 @@ se NULL, usa fit$fatores}
 }
 \value{
 invisivelmente, o caminho do arquivo gerado
-
-invisivelmente, o caminho do arquivo gerado
 }
 \description{
 Exporta os resultados do planejamento Box-Behnken para Excel, incluindo
-tabelas, ponto otimo, grafico de Pareto, superficies de resposta
-e graficos de contorno.
-
-Exporta os resultados do planejamento Box-Behnken para Excel, incluindo
-tabelas, ponto otimo, grafico de Pareto, superficies de resposta
-e graficos de contorno.
+tabelas, ponto otimo, ponto estacionario, grafico de Pareto,
+superficies de resposta e graficos de contorno.
 }

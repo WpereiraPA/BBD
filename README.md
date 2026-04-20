@@ -3,7 +3,7 @@ Pacote em R para geração, análise e visualização de planejamentos Box-Behnk
 
 ---
 
-##  O que o pacote faz
+## O que o pacote faz
 
 O pacote BBD foi desenvolvido para facilitar a aplicação prática de planejamentos Box-Behnken, integrando todas as etapas do experimento em um único fluxo.
 
@@ -19,8 +19,12 @@ Com ele, você pode:
   - Pareto
   - superfície de resposta
   - contorno
-- calcular o ponto ótimo estimado
-- exportar resultados para Excel (versão rápida e completa)
+- calcular o ponto ótimo estimado na região experimental
+- calcular o ponto estacionário do modelo
+- classificar automaticamente o ponto (máximo, mínimo ou sela)
+- interpretar matematicamente a matriz Hessiana
+- gerar saída didática com interpretação automática
+- exportar resultados para Excel (versão rápida e completa com ponto ótimo e ponto estacionário)
 
 ---
 
@@ -31,9 +35,10 @@ install.packages("remotes")
 remotes::install_github("WpereiraPA/BBD")
 library(BBD)
 ```
+
 ---
 
-##  Fluxo de uso
+## Fluxo de uso
 
 ### 1. Gerar matriz experimental
 
@@ -41,6 +46,7 @@ library(BBD)
 m <- matriz_bbd(k = 3)
 exportar_matriz_bbd(m)
 ```
+
 ---
 
 ### 2. Importar dados do Excel
@@ -61,6 +67,7 @@ fit <- bbd_fit(dados, resposta = "nome da sua resposta")
 # exemplo
 fit <- bbd_fit(dados, resposta = "Rendimento")
 ```
+
 ---
 
 ### 4. Análise
@@ -70,6 +77,7 @@ anova_bbd(fit)
 coeficientes_bbd(fit)
 tabela_efeitos_bbd(fit)
 ```
+
 ---
 
 ### 5. Ponto ótimo
@@ -77,15 +85,50 @@ tabela_efeitos_bbd(fit)
 ```r
 otimo_bbd(fit)
 ```
+
 ---
 
-### 6. Gráficos
+### 6. Ponto estacionário
+
+```r
+ponto_estacionario_bbd(fit)
+```
+
+O pacote calcula automaticamente o ponto estacionário do modelo quadrático e fornece:
+
+- coordenadas do ponto
+- classificação (máximo, mínimo ou sela)
+- autovalores da matriz B
+- interpretação automática baseada na curvatura da superfície
+
+📌 A interpretação é gerada automaticamente com base nos autovalores:
+
+- todos negativos → máximo local  
+- todos positivos → mínimo local  
+- sinais mistos → ponto de sela  
+
+---
+
+### Diferença entre ponto ótimo e ponto estacionário
+
+- **Ponto ótimo (`otimo_bbd`)**  
+  → melhor valor previsto dentro da região experimental  
+
+- **Ponto estacionário (`ponto_estacionario_bbd`)**  
+  → ponto crítico do modelo matemático  
+
+Ambos são complementares na análise.
+
+---
+
+### 7. Gráficos
 
 ```r
 pareto_bbd(fit)
 superficie_bbd(fit, "A", "B")
 contorno_bbd(fit, "A", "B")
 ```
+
 ---
 
 ## Exportação para Excel
@@ -94,7 +137,7 @@ O pacote permite duas formas de exportação:
 
 ---
 
-###  Exportação rápida
+### Exportação rápida
 
 ```r
 exportar_excel_bbd(fit)
@@ -108,12 +151,13 @@ Inclui:
 - Coeficientes  
 - Efeitos  
 - Ponto ótimo  
+- Ponto estacionário (nova aba)  
 
 ✔ Ideal para análise e documentação rápida
 
 ---
 
-###  Exportação completa
+### Exportação completa
 
 ```r
 exportar_excel_completo_bbd(fit)
@@ -124,6 +168,7 @@ Inclui tudo da versão anterior, além de:
 - Gráfico de Pareto  
 - Superfícies de resposta  
 - Gráficos de contorno  
+- Aba com ponto estacionário do modelo  
 
 ✔ Ideal para interpretação visual e apresentação
 
@@ -137,7 +182,7 @@ Inclui tudo da versão anterior, além de:
 
 ---
 
-##  Gráficos
+## Gráficos
 
 ### Pareto
 Identifica os efeitos mais importantes no modelo.
@@ -150,14 +195,15 @@ Representação bidimensional da superfície.
 
 ### Pontos experimentais no contorno
 
-Os quadrados representam os pontos experimentais utilizados no planejamento.
+Os pontos representam os experimentos utilizados no planejamento.
 
 ```r
 contorno_bbd(fit, "A", "B", mostrar_pontos = TRUE)
 ```
+
 ---
 
-##  Sobre o Box-Behnken
+## Sobre o Box-Behnken
 
 O planejamento Box-Behnken:
 
@@ -167,11 +213,13 @@ O planejamento Box-Behnken:
 - é eficiente para ajuste de modelos quadráticos
 
 ---
----
+
 ## Authors
 
 - Augusto Henrique de Sousa Xavier (augustohpa12@gmail.com)
 - Wanderley Xavier Pereira (wander.wx@gmail.com)
+
+---
 
 ## Copyright and institutional context
 
@@ -181,9 +229,13 @@ Copyright is shared by:
 - Wanderley Xavier Pereira
 - Centro Federal de Educacao Tecnologica de Minas Gerais (CEFET-MG)
 
+---
+
 ## Development notes
 
 This package was developed by the authors with support from artificial intelligence tools for code structuring, review and refinement. All methodological definitions, statistical logic and final implementation decisions are the responsibility of the authors.
+
+---
 
 ## Citation and authorship
 
@@ -191,10 +243,14 @@ If you use this package in academic, technical or derived work, please cite the 
 
 Citation of the original package is strongly encouraged in cases of use, modification, adaptation or extension.
 
+---
+
 ## Institutional support
 
 The development of this package was carried out in an academic context with institutional support from the Centro Federal de Educacao Tecnologica de Minas Gerais (CEFET-MG).
 
-##  Status
+---
 
-Pacote em desenvolvimento contínuo com foco em aplicação prática e uso didático.
+## Status
+
+Pacote em desenvolvimento contínuo com foco em aplicação prática, análise estatística e uso didático.

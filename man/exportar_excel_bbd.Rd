@@ -30,5 +30,6 @@ invisivelmente, o caminho do arquivo gerado
 }
 \description{
 Exporta os resultados numericos do planejamento Box-Behnken para Excel,
-incluindo dados, metricas, ANOVA, coeficientes, efeitos e ponto otimo.
+incluindo dados, metricas, ANOVA, coeficientes, efeitos, ponto otimo
+e ponto estacionario.
 }

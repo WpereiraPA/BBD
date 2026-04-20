@@ -1,7 +1,8 @@
 #' Exporta resultados do BBD para Excel
 #'
 #' Exporta os resultados numericos do planejamento Box-Behnken para Excel,
-#' incluindo dados, metricas, ANOVA, coeficientes, efeitos e ponto otimo.
+#' incluindo dados, metricas, ANOVA, coeficientes, efeitos, ponto otimo
+#' e ponto estacionario.
 #'
 #' @param fit objeto da classe bbd_fit
 #' @param arquivo nome do arquivo Excel
@@ -37,45 +38,8 @@ exportar_excel_bbd <- function(fit,
 #' Exporta resultados completos do BBD para Excel com graficos
 #'
 #' Exporta os resultados do planejamento Box-Behnken para Excel, incluindo
-#' tabelas, ponto otimo, grafico de Pareto, superficies de resposta
-#' e graficos de contorno.
-#'
-#' @param fit objeto da classe bbd_fit
-#' @param arquivo nome do arquivo Excel
-#' @param usar_desktop se TRUE, salva na Area de Trabalho, em uma pasta
-#'   chamada BBD_Resultados
-#' @param alpha nivel de significancia para destacar efeitos
-#' @param fatores vetor opcional com os fatores a considerar nos graficos;
-#'   se NULL, usa fit$fatores
-#'
-#' @return invisivelmente, o caminho do arquivo gerado
-#' @export
-exportar_excel_completo_bbd <- function(fit,
-                                        arquivo = NULL,
-                                        usar_desktop = TRUE,
-                                        alpha = 0.05,
-                                        fatores = NULL) {
-
-  if (is.null(arquivo)) {
-    timestamp <- format(Sys.time(), "%Y-%m-%d_%H-%M")
-    arquivo <- paste0("relatorio_completo_bbd_", timestamp, ".xlsx")
-  }
-
-  .exportar_excel_bbd_base(
-    fit = fit,
-    arquivo = arquivo,
-    usar_desktop = usar_desktop,
-    alpha = alpha,
-    fatores = fatores,
-    incluir_graficos = TRUE
-  )
-}
-
-#' Exporta resultados completos do BBD para Excel com graficos
-#'
-#' Exporta os resultados do planejamento Box-Behnken para Excel, incluindo
-#' tabelas, ponto otimo, grafico de Pareto, superficies de resposta
-#' e graficos de contorno.
+#' tabelas, ponto otimo, ponto estacionario, grafico de Pareto,
+#' superficies de resposta e graficos de contorno.
 #'
 #' @param fit objeto da classe bbd_fit
 #' @param arquivo nome do arquivo Excel
@@ -158,6 +122,28 @@ exportar_excel_completo_bbd <- function(fit,
     x
   }
 
+  interpretar_autovalores <- function(autovalores, tol = 1e-10) {
+    if (all(is.na(autovalores))) {
+      "Nao foi possivel interpretar os autovalores da matriz B."
+    } else if (all(autovalores < -tol)) {
+      "Como todos os autovalores sao negativos, a matriz e definida negativa, caracterizando o ponto como um maximo local."
+    } else if (all(autovalores > tol)) {
+      "Como todos os autovalores sao positivos, a matriz e definida positiva, caracterizando o ponto como um minimo local."
+    } else {
+      "Como ha autovalores com sinais mistos, a matriz e indefinida, caracterizando o ponto como ponto de sela."
+    }
+  }
+
+  nome_resposta <- NULL
+
+  if (!is.null(fit$nome_resposta) && nzchar(fit$nome_resposta)) {
+    nome_resposta <- fit$nome_resposta
+  } else if (!is.null(fit$resposta) && nzchar(fit$resposta)) {
+    nome_resposta <- fit$resposta
+  } else {
+    nome_resposta <- "Resposta"
+  }
+
   wb <- openxlsx::createWorkbook()
 
   estilo_cabecalho <- openxlsx::createStyle(
@@ -181,6 +167,15 @@ exportar_excel_completo_bbd <- function(fit,
     fgFill = "#FFF2CC",
     fontColour = "#C00000",
     textDecoration = "bold"
+  )
+
+  estilo_titulo <- openxlsx::createStyle(
+    textDecoration = "bold",
+    fontSize = 12,
+    halign = "center",
+    valign = "center",
+    border = "TopBottomLeftRight",
+    fgFill = "#D9EAF7"
   )
 
   aplicar_estilo_tabela <- function(nome_aba, df) {
@@ -209,6 +204,32 @@ exportar_excel_completo_bbd <- function(fit,
 
     openxlsx::freezePane(wb, nome_aba, firstRow = TRUE)
     openxlsx::setColWidths(wb, nome_aba, cols = 1:ncol(df), widths = "auto")
+  }
+
+  aplicar_estilo_bloco <- function(nome_aba, df, startRow, startCol = 1) {
+    openxlsx::writeData(wb, nome_aba, df, startRow = startRow, startCol = startCol)
+
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = nome_aba,
+      style = estilo_cabecalho,
+      rows = startRow,
+      cols = startCol:(startCol + ncol(df) - 1),
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+
+    if (nrow(df) > 0) {
+      openxlsx::addStyle(
+        wb = wb,
+        sheet = nome_aba,
+        style = estilo_corpo,
+        rows = (startRow + 1):(startRow + nrow(df)),
+        cols = startCol:(startCol + ncol(df) - 1),
+        gridExpand = TRUE,
+        stack = TRUE
+      )
+    }
   }
 
   # =======================
@@ -308,13 +329,13 @@ exportar_excel_completo_bbd <- function(fit,
     )
 
     df_resposta <- data.frame(
-      Fator = "Resposta",
+      Fator = nome_resposta,
       Valor = as.numeric(ot$resposta),
       check.names = FALSE
     )
 
     df_conv <- data.frame(
-      Fator = "Convergência",
+      Fator = "Convergencia",
       Valor = ot$convergencia,
       check.names = FALSE
     )
@@ -330,6 +351,158 @@ exportar_excel_completo_bbd <- function(fit,
     openxlsx::addWorksheet(wb, "Otimo")
     openxlsx::writeData(wb, "Otimo", otimo_df)
     aplicar_estilo_tabela("Otimo", otimo_df)
+  }
+
+  # =======================
+  # PONTO ESTACIONARIO
+  # =======================
+  pe <- NULL
+
+  if (exists("ponto_estacionario_bbd", mode = "function")) {
+    pe <- tryCatch(
+      ponto_estacionario_bbd(fit),
+      error = function(e) NULL
+    )
+  }
+
+  if (!is.null(pe)) {
+    aba_pe <- "Ponto_Estacionario"
+    openxlsx::addWorksheet(wb, aba_pe)
+
+    openxlsx::writeData(
+      wb,
+      aba_pe,
+      "Ponto estacionario do modelo BBD",
+      startRow = 1,
+      startCol = 1
+    )
+
+    openxlsx::mergeCells(wb, aba_pe, cols = 1:4, rows = 1)
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = aba_pe,
+      style = estilo_titulo,
+      rows = 1,
+      cols = 1:4,
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+
+    status_pe <- if (!is.null(pe$status) && nzchar(pe$status)) {
+      pe$status
+    } else if (!is.null(pe$convergencia) && isTRUE(pe$convergencia == 0)) {
+      "sucesso"
+    } else {
+      "falha"
+    }
+
+    df_resumo_pe <- data.frame(
+      Item = c(
+        "Classificacao do ponto estacionario",
+        paste0("Resposta estimada (", nome_resposta, ")"),
+        "Status"
+      ),
+      Valor = c(
+        pe$classificacao,
+        round(pe$resposta_estimada, 4),
+        status_pe
+      ),
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    )
+
+    df_ponto_pe <- data.frame(
+      Fator = names(pe$ponto),
+      Valor = round(as.numeric(pe$ponto[1, ]), 4),
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    )
+
+    df_autovalores_pe <- data.frame(
+      Autovalor = paste0("lambda", seq_along(pe$autovalores)),
+      Valor = round(pe$autovalores, 4),
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    )
+
+    interpretacao_pe <- data.frame(
+      Interpretacao = interpretar_autovalores_bbd(pe$autovalores),
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    )
+
+    df_matriz_B_pe <- as.data.frame(pe$matriz_B, check.names = FALSE)
+    df_matriz_B_pe <- cbind(Termo = rownames(df_matriz_B_pe), df_matriz_B_pe, row.names = NULL)
+    df_matriz_B_pe[] <- lapply(df_matriz_B_pe, function(col) {
+      if (is.numeric(col)) round(col, 4) else col
+    })
+
+    openxlsx::writeData(wb, aba_pe, "Resumo", startRow = 3, startCol = 1)
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = aba_pe,
+      style = estilo_titulo,
+      rows = 3,
+      cols = 1:2,
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+    openxlsx::mergeCells(wb, aba_pe, cols = 1:2, rows = 3)
+    aplicar_estilo_bloco(aba_pe, df_resumo_pe, startRow = 4, startCol = 1)
+
+    openxlsx::writeData(wb, aba_pe, "Coordenadas codificadas", startRow = 9, startCol = 1)
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = aba_pe,
+      style = estilo_titulo,
+      rows = 9,
+      cols = 1:2,
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+    openxlsx::mergeCells(wb, aba_pe, cols = 1:2, rows = 9)
+    aplicar_estilo_bloco(aba_pe, df_ponto_pe, startRow = 10, startCol = 1)
+
+    openxlsx::writeData(wb, aba_pe, "Autovalores da matriz B", startRow = 15, startCol = 1)
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = aba_pe,
+      style = estilo_titulo,
+      rows = 15,
+      cols = 1:2,
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+    openxlsx::mergeCells(wb, aba_pe, cols = 1:2, rows = 15)
+    aplicar_estilo_bloco(aba_pe, df_autovalores_pe, startRow = 16, startCol = 1)
+
+    openxlsx::writeData(wb, aba_pe, "Interpretacao", startRow = 21, startCol = 1)
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = aba_pe,
+      style = estilo_titulo,
+      rows = 21,
+      cols = 1:4,
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+    openxlsx::mergeCells(wb, aba_pe, cols = 1:4, rows = 21)
+    aplicar_estilo_bloco(aba_pe, interpretacao_pe, startRow = 22, startCol = 1)
+
+    openxlsx::writeData(wb, aba_pe, "Matriz B", startRow = 26, startCol = 1)
+    openxlsx::addStyle(
+      wb = wb,
+      sheet = aba_pe,
+      style = estilo_titulo,
+      rows = 26,
+      cols = 1:ncol(df_matriz_B_pe),
+      gridExpand = TRUE,
+      stack = TRUE
+    )
+    openxlsx::mergeCells(wb, aba_pe, cols = 1:ncol(df_matriz_B_pe), rows = 26)
+    aplicar_estilo_bloco(aba_pe, df_matriz_B_pe, startRow = 27, startCol = 1)
+
+    openxlsx::setColWidths(wb, aba_pe, cols = 1:max(4, ncol(df_matriz_B_pe)), widths = "auto")
   }
 
   arquivos_tmp <- character(0)

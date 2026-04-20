@@ -70,6 +70,7 @@ bbd_fit <- function(dados, resposta) {
   resultado <- list(
     formula = formula_modelo,
     resposta = resposta,
+    nome_resposta = resposta,   # 👈 NOVO
     fatores = fatores,
     dados = dados,
     modelo = modelo,
