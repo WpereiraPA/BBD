@@ -1,16 +1,18 @@
 #' Exporta resultados do BBD para Excel
 #'
-#' Exporta os resultados numericos do planejamento Box-Behnken para Excel,
-#' incluindo dados, metricas, ANOVA, coeficientes, efeitos, ponto otimo
-#' e ponto estacionario.
+#' Exporta os resultados numéricos do planejamento Box-Behnken para Excel,
+#' incluindo dados, métricas, ANOVA, coeficientes, efeitos, ponto ótimo
+#' e ponto estacionário.
 #'
 #' @param fit objeto da classe bbd_fit
 #' @param arquivo nome do arquivo Excel
-#' @param usar_desktop se TRUE, salva na Area de Trabalho, em uma pasta
+#' @param usar_desktop se TRUE, salva na Área de Trabalho, em uma pasta
 #'   chamada BBD_Resultados
-#' @param alpha nivel de significancia para destacar efeitos
-#' @param fatores vetor opcional com os fatores a considerar nos graficos;
+#' @param alpha nível de significância para destacar efeitos
+#' @param fatores vetor opcional com os fatores a considerar nos gráficos;
 #'   se NULL, usa fit$fatores
+#' @param objetivo objetivo da otimização: "max" para maximizar ou "min"
+#'   para minimizar. Padrão \code{"max"}.
 #'
 #' @return invisivelmente, o caminho do arquivo gerado
 #' @export
@@ -18,7 +20,8 @@ exportar_excel_bbd <- function(fit,
                                arquivo = NULL,
                                usar_desktop = TRUE,
                                alpha = 0.05,
-                               fatores = NULL) {
+                               fatores = NULL,
+                               objetivo = "max") {
 
   if (is.null(arquivo)) {
     timestamp <- format(Sys.time(), "%Y-%m-%d_%H-%M")
@@ -31,23 +34,26 @@ exportar_excel_bbd <- function(fit,
     usar_desktop = usar_desktop,
     alpha = alpha,
     fatores = fatores,
-    incluir_graficos = FALSE
+    incluir_graficos = FALSE,
+    objetivo = objetivo
   )
 }
 
-#' Exporta resultados completos do BBD para Excel com graficos
+#' Exporta resultados completos do BBD para Excel com gráficos
 #'
 #' Exporta os resultados do planejamento Box-Behnken para Excel, incluindo
-#' tabelas, ponto otimo, ponto estacionario, grafico de Pareto,
-#' superficies de resposta e graficos de contorno.
+#' tabelas, ponto ótimo, ponto estacionário, gráfico de Pareto,
+#' superfícies de resposta e gráficos de contorno.
 #'
 #' @param fit objeto da classe bbd_fit
 #' @param arquivo nome do arquivo Excel
-#' @param usar_desktop se TRUE, salva na Area de Trabalho, em uma pasta
+#' @param usar_desktop se TRUE, salva na Área de Trabalho, em uma pasta
 #'   chamada BBD_Resultados
-#' @param alpha nivel de significancia para destacar efeitos
-#' @param fatores vetor opcional com os fatores a considerar nos graficos;
+#' @param alpha nível de significância para destacar efeitos
+#' @param fatores vetor opcional com os fatores a considerar nos gráficos;
 #'   se NULL, usa fit$fatores
+#' @param objetivo objetivo da otimização: "max" para maximizar ou "min"
+#'   para minimizar. Padrão \code{"max"}.
 #'
 #' @return invisivelmente, o caminho do arquivo gerado
 #' @export
@@ -55,7 +61,8 @@ exportar_excel_completo_bbd <- function(fit,
                                         arquivo = NULL,
                                         usar_desktop = TRUE,
                                         alpha = 0.05,
-                                        fatores = NULL) {
+                                        fatores = NULL,
+                                        objetivo = "max") {
 
   if (is.null(arquivo)) {
     timestamp <- format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
@@ -68,7 +75,8 @@ exportar_excel_completo_bbd <- function(fit,
     usar_desktop = usar_desktop,
     alpha = alpha,
     fatores = fatores,
-    incluir_graficos = TRUE
+    incluir_graficos = TRUE,
+    objetivo = objetivo
   )
 }
 
@@ -77,18 +85,37 @@ exportar_excel_completo_bbd <- function(fit,
                                      usar_desktop,
                                      alpha,
                                      fatores,
-                                     incluir_graficos = FALSE) {
+                                     incluir_graficos = FALSE,
+                                     objetivo = "max") {
 
   if (!inherits(fit, "bbd_fit")) {
     stop("O objeto precisa ser da classe 'bbd_fit'.")
   }
 
   if (!requireNamespace("openxlsx", quietly = TRUE)) {
-    stop("Instale o pacote 'openxlsx' para usar esta funcao.")
+    stop("Instale o pacote 'openxlsx' para usar esta função.")
   }
 
   if (!is.character(arquivo) || length(arquivo) != 1 || is.na(arquivo) || trimws(arquivo) == "") {
-    stop("O argumento 'arquivo' deve ser uma string nao vazia.")
+    stop("O argumento 'arquivo' deve ser uma string não vazia.")
+  }
+
+  if (!is.numeric(alpha) || length(alpha) != 1 || is.na(alpha) || alpha <= 0 || alpha >= 1) {
+    stop("O argumento 'alpha' deve ser um número entre 0 e 1.")
+  }
+
+  if (!is.character(objetivo) || length(objetivo) != 1 || is.na(objetivo)) {
+    stop("O argumento 'objetivo' deve ser uma string: 'max' ou 'min'.")
+  }
+
+  objetivo <- tolower(trimws(objetivo))
+
+  if (objetivo %in% c("max", "maximizar", "máximo", "maximo")) {
+    objetivo <- "max"
+  } else if (objetivo %in% c("min", "minimizar", "mínimo", "minimo")) {
+    objetivo <- "min"
+  } else {
+    stop("O argumento 'objetivo' deve ser 'max' ou 'min'.")
   }
 
   if (!grepl("\\.xlsx$", arquivo, ignore.case = TRUE)) {
@@ -117,31 +144,47 @@ exportar_excel_completo_bbd <- function(fit,
 
   formatar_termo <- function(x) {
     x <- as.character(x)
-    x <- gsub(":", "×", x, fixed = TRUE)
+    x <- gsub(":", " × ", x, fixed = TRUE)
     x <- gsub("I\\(([^\\)]+)\\^2\\)", "\\1²", x)
     x
   }
 
-  interpretar_autovalores <- function(autovalores, tol = 1e-10) {
+  interpretar_autovalores_local <- function(autovalores, tol = 1e-10, tol_zero = 1e-4) {
+
     if (all(is.na(autovalores))) {
-      "Nao foi possivel interpretar os autovalores da matriz B."
-    } else if (all(autovalores < -tol)) {
-      "Como todos os autovalores sao negativos, a matriz e definida negativa, caracterizando o ponto como um maximo local."
-    } else if (all(autovalores > tol)) {
-      "Como todos os autovalores sao positivos, a matriz e definida positiva, caracterizando o ponto como um minimo local."
-    } else {
-      "Como ha autovalores com sinais mistos, a matriz e indefinida, caracterizando o ponto como ponto de sela."
+      return("Não foi possível interpretar os autovalores da matriz B.")
     }
+
+    texto_base <- if (all(autovalores < -tol)) {
+      "Como todos os autovalores são negativos, a matriz é definida negativa, caracterizando o ponto como um máximo local."
+    } else if (all(autovalores > tol)) {
+      "Como todos os autovalores são positivos, a matriz é definida positiva, caracterizando o ponto como um mínimo local."
+    } else {
+      "Como os autovalores apresentam sinais mistos, o ponto é classificado como ponto de sela."
+    }
+
+    aviso_curvatura <- if (any(abs(autovalores) < tol_zero, na.rm = TRUE)) {
+      " Há autovalores próximos de zero, o que pode indicar baixa curvatura em pelo menos uma direção."
+    } else {
+      ""
+    }
+
+    paste0(texto_base, aviso_curvatura)
   }
 
-  nome_resposta <- NULL
-
-  if (!is.null(fit$nome_resposta) && nzchar(fit$nome_resposta)) {
-    nome_resposta <- fit$nome_resposta
+  nome_resposta <- if (!is.null(fit$nome_resposta) && nzchar(fit$nome_resposta)) {
+    fit$nome_resposta
   } else if (!is.null(fit$resposta) && nzchar(fit$resposta)) {
-    nome_resposta <- fit$resposta
+    fit$resposta
   } else {
-    nome_resposta <- "Resposta"
+    "Resposta"
+  }
+
+  interpretar_autovalores_excel <- function(autovalores) {
+    if (exists("interpretar_autovalores_bbd", mode = "function")) {
+      return(interpretar_autovalores_bbd(autovalores))
+    }
+    interpretar_autovalores_local(autovalores)
   }
 
   wb <- openxlsx::createWorkbook()
@@ -244,10 +287,10 @@ exportar_excel_completo_bbd <- function(fit,
   }
 
   # =======================
-  # METRICAS
+  # MÉTRICAS
   # =======================
   met_df <- data.frame(
-    Metrica = c("R2", "R2 ajustado", "Erro padrao residual"),
+    Métrica = c("R²", "R² ajustado", "Erro padrão residual"),
     Valor = c(
       fit$r2,
       fit$r2_ajustado,
@@ -256,9 +299,9 @@ exportar_excel_completo_bbd <- function(fit,
     check.names = FALSE
   )
 
-  openxlsx::addWorksheet(wb, "Metricas")
-  openxlsx::writeData(wb, "Metricas", met_df)
-  aplicar_estilo_tabela("Metricas", met_df)
+  openxlsx::addWorksheet(wb, "Métricas")
+  openxlsx::writeData(wb, "Métricas", met_df)
+  aplicar_estilo_tabela("Métricas", met_df)
 
   # =======================
   # ANOVA
@@ -310,51 +353,57 @@ exportar_excel_completo_bbd <- function(fit,
   }
 
   # =======================
-  # OTIMO
+  # ÓTIMO
   # =======================
   ot <- NULL
 
   if (exists("otimo_bbd", mode = "function")) {
     ot <- tryCatch(
-      otimo_bbd(fit),
+      otimo_bbd(fit, objetivo = objetivo),
       error = function(e) NULL
     )
   }
 
   if (!is.null(ot)) {
+    df_objetivo <- data.frame(
+      Item = "Objetivo",
+      Valor = ifelse(!is.null(ot$objetivo) && ot$objetivo == "min", "Minimizar", "Maximizar"),
+      check.names = FALSE
+    )
+
     df_ponto <- data.frame(
-      Fator = names(ot$ponto),
+      Item = names(ot$ponto),
       Valor = as.numeric(ot$ponto),
       check.names = FALSE
     )
 
     df_resposta <- data.frame(
-      Fator = nome_resposta,
+      Item = nome_resposta,
       Valor = as.numeric(ot$resposta),
       check.names = FALSE
     )
 
     df_conv <- data.frame(
-      Fator = "Convergencia",
-      Valor = ot$convergencia,
+      Item = "Convergência",
+      Valor = ifelse(isTRUE(ot$convergencia == 0), "sucesso", "falha"),
       check.names = FALSE
     )
 
     df_valor <- data.frame(
-      Fator = "Valor otimizado",
+      Item = "Valor otimizado",
       Valor = as.numeric(ot$valor_otimizado),
       check.names = FALSE
     )
 
-    otimo_df <- rbind(df_ponto, df_resposta, df_conv, df_valor)
+    otimo_df <- rbind(df_objetivo, df_ponto, df_resposta, df_conv, df_valor)
 
-    openxlsx::addWorksheet(wb, "Otimo")
-    openxlsx::writeData(wb, "Otimo", otimo_df)
-    aplicar_estilo_tabela("Otimo", otimo_df)
+    openxlsx::addWorksheet(wb, "Ótimo")
+    openxlsx::writeData(wb, "Ótimo", otimo_df)
+    aplicar_estilo_tabela("Ótimo", otimo_df)
   }
 
   # =======================
-  # PONTO ESTACIONARIO
+  # PONTO ESTACIONÁRIO
   # =======================
   pe <- NULL
 
@@ -366,13 +415,13 @@ exportar_excel_completo_bbd <- function(fit,
   }
 
   if (!is.null(pe)) {
-    aba_pe <- "Ponto_Estacionario"
+    aba_pe <- "Ponto Estacionário"
     openxlsx::addWorksheet(wb, aba_pe)
 
     openxlsx::writeData(
       wb,
       aba_pe,
-      "Ponto estacionario do modelo BBD",
+      "Ponto estacionário do modelo Box-Behnken",
       startRow = 1,
       startCol = 1
     )
@@ -398,7 +447,7 @@ exportar_excel_completo_bbd <- function(fit,
 
     df_resumo_pe <- data.frame(
       Item = c(
-        "Classificacao do ponto estacionario",
+        "Classificação do ponto estacionário",
         paste0("Resposta estimada (", nome_resposta, ")"),
         "Status"
       ),
@@ -418,15 +467,22 @@ exportar_excel_completo_bbd <- function(fit,
       stringsAsFactors = FALSE
     )
 
+    subs <- c("₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉")
+    rotulos_auto <- if (length(pe$autovalores) <= length(subs)) {
+      paste0("λ", subs[seq_along(pe$autovalores)])
+    } else {
+      paste0("λ", seq_along(pe$autovalores))
+    }
+
     df_autovalores_pe <- data.frame(
-      Autovalor = paste0("lambda", seq_along(pe$autovalores)),
+      Autovalor = rotulos_auto,
       Valor = round(pe$autovalores, 4),
       check.names = FALSE,
       stringsAsFactors = FALSE
     )
 
     interpretacao_pe <- data.frame(
-      Interpretacao = interpretar_autovalores_bbd(pe$autovalores),
+      Interpretação = interpretar_autovalores_excel(pe$autovalores),
       check.names = FALSE,
       stringsAsFactors = FALSE
     )
@@ -476,7 +532,7 @@ exportar_excel_completo_bbd <- function(fit,
     openxlsx::mergeCells(wb, aba_pe, cols = 1:2, rows = 15)
     aplicar_estilo_bloco(aba_pe, df_autovalores_pe, startRow = 16, startCol = 1)
 
-    openxlsx::writeData(wb, aba_pe, "Interpretacao", startRow = 21, startCol = 1)
+    openxlsx::writeData(wb, aba_pe, "Interpretação", startRow = 21, startCol = 1)
     openxlsx::addStyle(
       wb = wb,
       sheet = aba_pe,
@@ -510,7 +566,7 @@ exportar_excel_completo_bbd <- function(fit,
   if (isTRUE(incluir_graficos)) {
 
     if (length(fatores) < 2) {
-      stop("Sao necessarios pelo menos dois fatores para exportar superficies e contornos.")
+      stop("São necessários pelo menos dois fatores para exportar superfícies e contornos.")
     }
 
     # =======================
@@ -521,14 +577,14 @@ exportar_excel_completo_bbd <- function(fit,
 
     grDevices::png(tmp_pareto, width = 2200, height = 1400, res = 220)
     graphics::par(cex = 1.35, cex.axis = 1.15, cex.lab = 1.2, cex.main = 1.3)
-    pareto_bbd(fit)
+    pareto_bbd(fit, alpha = alpha)
     grDevices::dev.off()
 
     openxlsx::addWorksheet(wb, "Pareto")
     openxlsx::writeData(
       wb,
       "Pareto",
-      enc2utf8("Grafico de Pareto dos efeitos"),
+      enc2utf8("Gráfico de Pareto dos efeitos"),
       startRow = 1,
       startCol = 2
     )
@@ -547,13 +603,13 @@ exportar_excel_completo_bbd <- function(fit,
     )
 
     # =======================
-    # SUPERFICIES E CONTORNOS
+    # SUPERFÍCIES E CONTORNOS
     # =======================
     pares <- utils::combn(fatores, 2, simplify = FALSE)
 
     nome_aba_seguro <- function(prefixo, f1, f2) {
       nome <- paste(prefixo, f1, "x", f2)
-      nome <- gsub("[\\\\/:*?\\[\\]]", "_", nome)
+      nome <- gsub("[^[:alnum:]_ ]", "_", nome)
       if (nchar(nome) > 31) {
         nome <- substr(nome, 1, 31)
       }
@@ -576,7 +632,7 @@ exportar_excel_completo_bbd <- function(fit,
         y_plot <- ori[2]
 
         # -----------------------
-        # SUPERFICIE
+        # SUPERFÍCIE
         # -----------------------
         tmp_sup <- tempfile(fileext = ".png")
         arquivos_tmp <- c(arquivos_tmp, tmp_sup)
@@ -590,7 +646,7 @@ exportar_excel_completo_bbd <- function(fit,
         openxlsx::writeData(
           wb,
           aba_sup,
-          enc2utf8(paste0("Superficie de resposta: ", x_plot, " × ", y_plot)),
+          enc2utf8(paste0("Superfície de resposta: ", x_plot, " × ", y_plot)),
           startRow = 1,
           startCol = 2
         )
@@ -624,7 +680,7 @@ exportar_excel_completo_bbd <- function(fit,
         openxlsx::writeData(
           wb,
           aba_cont,
-          enc2utf8(paste0("Grafico de contorno: ", x_plot, " × ", y_plot)),
+          enc2utf8(paste0("Gráfico de contorno: ", x_plot, " × ", y_plot)),
           startRow = 1,
           startCol = 2
         )

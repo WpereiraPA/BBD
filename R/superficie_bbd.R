@@ -13,11 +13,19 @@
 superficie_bbd <- function(fit, x1, x2, n = 45) {
 
   if (!inherits(fit, "bbd_fit")) {
-    stop("O objeto fit precisa ser da classe 'bbd_fit'.")
+    stop("O objeto 'fit' precisa ser da classe 'bbd_fit'.")
   }
 
   if (missing(x1) || missing(x2)) {
     stop("Os argumentos 'x1' e 'x2' são obrigatórios.")
+  }
+
+  if (!is.character(x1) || length(x1) != 1 || is.na(x1) || trimws(x1) == "") {
+    stop("O argumento 'x1' deve ser uma string não vazia.")
+  }
+
+  if (!is.character(x2) || length(x2) != 1 || is.na(x2) || trimws(x2) == "") {
+    stop("O argumento 'x2' deve ser uma string não vazia.")
   }
 
   if (!all(c(x1, x2) %in% fit$fatores)) {
@@ -32,13 +40,25 @@ superficie_bbd <- function(fit, x1, x2, n = 45) {
     stop("O argumento 'n' deve ser numérico e maior ou igual a 10.")
   }
 
-  xs <- seq(min(fit$dados[[x1]], na.rm = TRUE), max(fit$dados[[x1]], na.rm = TRUE), length.out = n)
-  ys <- seq(min(fit$dados[[x2]], na.rm = TRUE), max(fit$dados[[x2]], na.rm = TRUE), length.out = n)
+  n <- as.integer(n)
+
+  xs <- seq(
+    min(fit$dados[[x1]], na.rm = TRUE),
+    max(fit$dados[[x1]], na.rm = TRUE),
+    length.out = n
+  )
+
+  ys <- seq(
+    min(fit$dados[[x2]], na.rm = TRUE),
+    max(fit$dados[[x2]], na.rm = TRUE),
+    length.out = n
+  )
 
   grade <- expand.grid(xs, ys, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
   names(grade) <- c(x1, x2)
 
   outros_fatores <- setdiff(fit$fatores, c(x1, x2))
+
   if (length(outros_fatores) > 0) {
     for (f in outros_fatores) {
       grade[[f]] <- 0
@@ -47,9 +67,14 @@ superficie_bbd <- function(fit, x1, x2, n = 45) {
 
   grade <- grade[, fit$fatores, drop = FALSE]
 
-  z <- stats::predict(fit$modelo, newdata = grade)
-  zmat <- matrix(z, nrow = n, ncol = n)
+  z <- tryCatch(
+    stats::predict(fit$modelo, newdata = grade),
+    error = function(e) {
+      stop("Não foi possível gerar as predições para a superfície de resposta.")
+    }
+  )
 
+  zmat <- matrix(z, nrow = n, ncol = n)
   zlim <- range(zmat, na.rm = TRUE)
 
   pal <- grDevices::colorRampPalette(
@@ -76,8 +101,8 @@ superficie_bbd <- function(fit, x1, x2, n = 45) {
 
   facetcol <- cols[idx]
 
-  titulo_resposta <- if (!is.null(fit$resposta) && !is.na(fit$resposta) && nzchar(fit$resposta)) {
-    fit$resposta
+  titulo_resposta <- if (!is.null(fit$nome_resposta) && !is.na(fit$nome_resposta) && nzchar(fit$nome_resposta)) {
+    fit$nome_resposta
   } else {
     "Resposta"
   }

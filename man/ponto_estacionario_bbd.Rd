@@ -2,18 +2,22 @@
 % Please edit documentation in R/ponto_estacionario_bbd.R
 \name{ponto_estacionario_bbd}
 \alias{ponto_estacionario_bbd}
-\title{Calcular ponto estacionario do modelo Box-Behnken}
+\title{Calcular ponto estacionário do modelo Box-Behnken}
 \usage{
-ponto_estacionario_bbd(fit)
+ponto_estacionario_bbd(fit, objetivo = NULL)
 }
 \arguments{
 \item{fit}{Objeto retornado por \code{bbd_fit()}.}
+
+\item{objetivo}{objetivo desejado para a resposta: \code{"max"} para maximizar
+ou \code{"min"} para minimizar. Se \code{NULL}, apenas a classificação
+matemática do ponto é retornada.}
 }
 \value{
-Lista com o ponto estacionario, classificacao, autovalores,
-matriz B, resposta estimada no ponto e status de convergencia.
+Lista com o ponto estacionário, classificação, autovalores,
+matriz B, resposta estimada no ponto e status de convergência.
 }
 \description{
-Calcula o ponto estacionario de um modelo quadratico ajustado por
-\code{bbd_fit()}, usando a forma matricial da superficie de resposta.
+Calcula o ponto estacionário de um modelo quadrático ajustado por
+\code{bbd_fit()}, usando a forma matricial da superfície de resposta.
 }

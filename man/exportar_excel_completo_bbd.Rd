@@ -2,14 +2,15 @@
 % Please edit documentation in R/exportar_excel_bbd.R
 \name{exportar_excel_completo_bbd}
 \alias{exportar_excel_completo_bbd}
-\title{Exporta resultados completos do BBD para Excel com graficos}
+\title{Exporta resultados completos do BBD para Excel com gráficos}
 \usage{
 exportar_excel_completo_bbd(
   fit,
   arquivo = NULL,
   usar_desktop = TRUE,
   alpha = 0.05,
-  fatores = NULL
+  fatores = NULL,
+  objetivo = "max"
 )
 }
 \arguments{
@@ -17,19 +18,22 @@ exportar_excel_completo_bbd(
 
 \item{arquivo}{nome do arquivo Excel}
 
-\item{usar_desktop}{se TRUE, salva na Area de Trabalho, em uma pasta
+\item{usar_desktop}{se TRUE, salva na Área de Trabalho, em uma pasta
 chamada BBD_Resultados}
 
-\item{alpha}{nivel de significancia para destacar efeitos}
+\item{alpha}{nível de significância para destacar efeitos}
 
-\item{fatores}{vetor opcional com os fatores a considerar nos graficos;
+\item{fatores}{vetor opcional com os fatores a considerar nos gráficos;
 se NULL, usa fit$fatores}
+
+\item{objetivo}{objetivo da otimização: "max" para maximizar ou "min"
+para minimizar. Padrão \code{"max"}.}
 }
 \value{
 invisivelmente, o caminho do arquivo gerado
 }
 \description{
 Exporta os resultados do planejamento Box-Behnken para Excel, incluindo
-tabelas, ponto otimo, ponto estacionario, grafico de Pareto,
-superficies de resposta e graficos de contorno.
+tabelas, ponto ótimo, ponto estacionário, gráfico de Pareto,
+superfícies de resposta e gráficos de contorno.
 }

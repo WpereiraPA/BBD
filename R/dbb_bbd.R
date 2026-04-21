@@ -23,20 +23,26 @@ bbd_fit <- function(dados, resposta) {
     stop("A coluna de resposta informada não foi encontrada em 'dados'.")
   }
 
-  colunas_ignorar <- c("Ensaio", "Ensaios", "Run", "Ordem", "Tratamento")
-
-  fatores <- setdiff(names(dados), c(resposta, colunas_ignorar))
-
-  if (length(fatores) < 2) {
-    stop("O modelo precisa de pelo menos dois fatores experimentais.")
-  }
-
   if (anyNA(dados[[resposta]])) {
     stop("A coluna de resposta contém valores ausentes. Preencha todos os valores antes do ajuste.")
   }
 
   if (!is.numeric(dados[[resposta]])) {
     stop("A coluna de resposta precisa ser numérica.")
+  }
+
+  colunas_ignorar <- c("Ensaio", "Ensaios", "Run", "Ordem", "Tratamento")
+
+  candidatos <- setdiff(names(dados), c(resposta, colunas_ignorar))
+
+  if (length(candidatos) == 0) {
+    stop("Nenhum fator experimental foi identificado em 'dados'.")
+  }
+
+  fatores <- candidatos[vapply(dados[candidatos], is.numeric, logical(1))]
+
+  if (length(fatores) < 2) {
+    stop("O modelo precisa de pelo menos dois fatores experimentais numéricos.")
   }
 
   termo_linear <- paste(fatores, collapse = " + ")
@@ -63,14 +69,22 @@ bbd_fit <- function(dados, resposta) {
   sq_residuos <- sum(residuos^2)
 
   aviso <- NULL
+
   if (sq_residuos < 1e-10) {
     aviso <- "Ajuste essencialmente perfeito. A ANOVA com teste F pode ser instável."
+  }
+
+  if (any(is.na(stats::coef(modelo)))) {
+    aviso <- c(
+      aviso,
+      "O modelo apresentou coeficientes não estimáveis. Verifique colinearidade, estrutura dos dados ou excesso de termos."
+    )
   }
 
   resultado <- list(
     formula = formula_modelo,
     resposta = resposta,
-    nome_resposta = resposta,   # 👈 NOVO
+    nome_resposta = resposta,
     fatores = fatores,
     dados = dados,
     modelo = modelo,

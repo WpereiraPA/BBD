@@ -7,15 +7,27 @@
 #' @return data.frame com a tabela ANOVA.
 #' @export
 anova_bbd <- function(fit) {
+
   if (missing(fit)) {
     stop("O argumento 'fit' é obrigatório.")
   }
 
-  if (!is.list(fit) || is.null(fit$modelo)) {
+  if (!inherits(fit, "bbd_fit") || is.null(fit$modelo)) {
     stop("Objeto 'fit' inválido. Use um objeto retornado por 'bbd_fit()'.")
   }
 
-  tab <- as.data.frame(stats::anova(fit$modelo))
+  an <- stats::anova(fit$modelo)
+
+  if (is.null(an)) {
+    stop("Não foi possível extrair a tabela ANOVA do modelo.")
+  }
+
+  tab <- as.data.frame(an)
+
+  if (ncol(tab) == 0) {
+    stop("A tabela ANOVA retornada pelo modelo está vazia.")
+  }
+
   tab$Termo <- rownames(tab)
   rownames(tab) <- NULL
 
@@ -27,5 +39,5 @@ anova_bbd <- function(fit) {
   names(tab) <- sub("Mean Sq", "QM", names(tab))
   names(tab) <- sub("F value", "F", names(tab))
 
-  tab
+  return(tab)
 }

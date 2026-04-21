@@ -9,7 +9,8 @@ exportar_excel_bbd(
   arquivo = NULL,
   usar_desktop = TRUE,
   alpha = 0.05,
-  fatores = NULL
+  fatores = NULL,
+  objetivo = "max"
 )
 }
 \arguments{
@@ -17,19 +18,22 @@ exportar_excel_bbd(
 
 \item{arquivo}{nome do arquivo Excel}
 
-\item{usar_desktop}{se TRUE, salva na Area de Trabalho, em uma pasta
+\item{usar_desktop}{se TRUE, salva na Área de Trabalho, em uma pasta
 chamada BBD_Resultados}
 
-\item{alpha}{nivel de significancia para destacar efeitos}
+\item{alpha}{nível de significância para destacar efeitos}
 
-\item{fatores}{vetor opcional com os fatores a considerar nos graficos;
+\item{fatores}{vetor opcional com os fatores a considerar nos gráficos;
 se NULL, usa fit$fatores}
+
+\item{objetivo}{objetivo da otimização: "max" para maximizar ou "min"
+para minimizar. Padrão \code{"max"}.}
 }
 \value{
 invisivelmente, o caminho do arquivo gerado
 }
 \description{
-Exporta os resultados numericos do planejamento Box-Behnken para Excel,
-incluindo dados, metricas, ANOVA, coeficientes, efeitos, ponto otimo
-e ponto estacionario.
+Exporta os resultados numéricos do planejamento Box-Behnken para Excel,
+incluindo dados, métricas, ANOVA, coeficientes, efeitos, ponto ótimo
+e ponto estacionário.
 }

@@ -9,10 +9,10 @@ tabela_efeitos_bbd(fit, alpha = 0.05)
 \arguments{
 \item{fit}{Objeto ajustado por \code{bbd_fit()}.}
 
-\item{alpha}{Nível de significância. Padrão 0.05.}
+\item{alpha}{Nivel de significancia. Padrao 0.05.}
 }
 \value{
-data.frame com efeitos, erro padrão, p-valor e significância.
+data.frame com efeitos, erro padrao, p-valor e significancia.
 }
 \description{
 Tabela organizada dos efeitos do modelo BBD

@@ -4,10 +4,12 @@
 \alias{otimo_bbd}
 \title{Encontrar ponto otimo previsto}
 \usage{
-otimo_bbd(fit)
+otimo_bbd(fit, objetivo = "max")
 }
 \arguments{
 \item{fit}{objeto retornado por bbd_fit()}
+
+\item{objetivo}{objetivo da otimizacao: "max" para maximizar ou "min" para minimizar}
 }
 \description{
 Encontrar ponto otimo previsto

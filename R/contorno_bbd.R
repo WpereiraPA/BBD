@@ -14,11 +14,19 @@
 contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
 
   if (!inherits(fit, "bbd_fit")) {
-    stop("O objeto fit precisa ser da classe 'bbd_fit'.")
+    stop("O objeto 'fit' precisa ser da classe 'bbd_fit'.")
   }
 
   if (missing(x1) || missing(x2)) {
     stop("Os argumentos 'x1' e 'x2' são obrigatórios.")
+  }
+
+  if (!is.character(x1) || length(x1) != 1 || is.na(x1) || trimws(x1) == "") {
+    stop("O argumento 'x1' deve ser uma string não vazia.")
+  }
+
+  if (!is.character(x2) || length(x2) != 1 || is.na(x2) || trimws(x2) == "") {
+    stop("O argumento 'x2' deve ser uma string não vazia.")
   }
 
   if (!all(c(x1, x2) %in% fit$fatores)) {
@@ -33,6 +41,8 @@ contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
     stop("O argumento 'n' deve ser numérico e maior ou igual a 20.")
   }
 
+  n <- as.integer(n)
+
   xr <- range(fit$dados[[x1]], na.rm = TRUE)
   yr <- range(fit$dados[[x2]], na.rm = TRUE)
 
@@ -46,27 +56,27 @@ contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
   names(grade) <- c(x1, x2)
 
   outros_fatores <- setdiff(fit$fatores, c(x1, x2))
-  if (length(outros_fatores) > 0) {
-    for (f in outros_fatores) {
-      grade[[f]] <- 0
-    }
+  for (f in outros_fatores) {
+    grade[[f]] <- 0
   }
 
   grade <- grade[, fit$fatores, drop = FALSE]
 
-  z <- stats::predict(fit$modelo, newdata = grade)
+  z <- tryCatch(
+    stats::predict(fit$modelo, newdata = grade),
+    error = function(e) {
+      stop("Não foi possível gerar as predições para o gráfico de contorno.")
+    }
+  )
+
   zmat <- matrix(z, nrow = n, ncol = n)
 
   zmin <- min(zmat, na.rm = TRUE)
   zmax <- max(zmat, na.rm = TRUE)
 
-  if (zmin >= 40 && zmax <= 47) {
-    niveis_rotulo <- c(41, 42, 43, 44, 45, 46)
-    niveis_fill <- seq(40.5, 46.5, by = 0.5)
-  } else {
-    niveis_rotulo <- pretty(c(zmin, zmax), n = 7)
-    niveis_fill <- seq(zmin, zmax, length.out = 13)
-  }
+  # 🔥 GENERALIZADO (REMOVIDO O GESSO)
+  niveis_rotulo <- pretty(c(zmin, zmax), n = 7)
+  niveis_fill <- seq(zmin, zmax, length.out = 13)
 
   pal <- grDevices::colorRampPalette(
     c("darkgreen", "green3", "chartreuse3", "yellow2", "goldenrod1", "thistle3")
@@ -79,13 +89,8 @@ contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
     levels = niveis_rotulo
   )
 
-  xlim_inf <- min(xs)
-  xlim_sup <- max(xs)
-  ylim_inf <- min(ys)
-  ylim_sup <- max(ys)
-
-  titulo_resposta <- if (!is.null(fit$resposta) && !is.na(fit$resposta) && nzchar(fit$resposta)) {
-    fit$resposta
+  titulo_resposta <- if (!is.null(fit$nome_resposta) && nzchar(fit$nome_resposta)) {
+    fit$nome_resposta
   } else {
     "Resposta"
   }
@@ -107,8 +112,9 @@ contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
     key.title = graphics::title(main = titulo_resposta, cex.main = 0.82),
     key.axes = graphics::axis(4, cex.axis = 0.9),
     plot.axes = {
-      graphics::axis(1, cex.axis = 0.9)
-      graphics::axis(2, cex.axis = 0.9)
+
+      graphics::axis(1)
+      graphics::axis(2)
 
       graphics::contour(
         x = xs,
@@ -117,53 +123,27 @@ contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
         levels = niveis_rotulo,
         add = TRUE,
         drawlabels = FALSE,
-        col = "gray10",
-        lwd = 1.2
+        col = "gray10"
       )
 
       for (cl in cls) {
 
         ok <- which(
-          cl$x > (xlim_inf + 0.06 * diff(range(xs))) &
-            cl$x < (xlim_sup - 0.04 * diff(range(xs))) &
-            cl$y > (ylim_inf + 0.05 * diff(range(ys))) &
-            cl$y < (ylim_sup - 0.06 * diff(range(ys)))
+          cl$x > (min(xs) + 0.06 * diff(range(xs))) &
+            cl$x < (max(xs) - 0.04 * diff(range(xs))) &
+            cl$y > (min(ys) + 0.05 * diff(range(ys))) &
+            cl$y < (max(ys) - 0.06 * diff(range(ys)))
         )
 
         if (length(ok) > 0) {
 
-          nivel_norm <- if ((zmax - zmin) > 0) {
-            (cl$level - zmin) / (zmax - zmin)
-          } else {
-            0.5
-          }
-
-          if (nivel_norm >= 0.85) {
-            i <- ok[max(1, round(length(ok) * 0.12))]
-            desloc <- 0.060 * diff(range(ys))
-          } else if (nivel_norm >= 0.70) {
-            i <- ok[max(1, round(length(ok) * 0.24))]
-            desloc <- 0.040 * diff(range(ys))
-          } else if (nivel_norm >= 0.55) {
-            i <- ok[max(1, round(length(ok) * 0.38))]
-            desloc <- 0.022 * diff(range(ys))
-          } else if (nivel_norm >= 0.35) {
-            i <- ok[max(1, round(length(ok) * 0.50))]
-            desloc <- 0.012 * diff(range(ys))
-          } else if (nivel_norm >= 0.20) {
-            i <- ok[max(1, round(length(ok) * 0.55))]
-            desloc <- 0.030 * diff(range(ys))
-          } else {
-            i <- ok[max(1, round(length(ok) * 0.50))]
-            desloc <- 0.018 * diff(range(ys))
-          }
+          i <- ok[max(1, round(length(ok) * 0.5))]
 
           graphics::text(
             x = cl$x[i],
-            y = cl$y[i] + desloc,
+            y = cl$y[i],
             labels = format(round(cl$level, 2), nsmall = 2, decimal.mark = ","),
-            cex = 0.85,
-            col = "black"
+            cex = 0.85
           )
         }
       }
@@ -173,8 +153,7 @@ contorno_bbd <- function(fit, x1, x2, n = 140, mostrar_pontos = FALSE) {
           fit$dados[[x1]],
           fit$dados[[x2]],
           pch = 15,
-          cex = 0.7,
-          col = "black"
+          cex = 0.7
         )
       }
 
