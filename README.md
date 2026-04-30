@@ -76,12 +76,12 @@ tabela_efeitos_bbd(fit)
 ### 5. Ponto ótimo
 
 ```r
-# Maximizar (padrão)
 otimo_bbd(fit, objetivo = "max")
-
-# Minimizar
 otimo_bbd(fit, objetivo = "min")
 ```
+
+📌 Observação:
+A função informa automaticamente se o ótimo está no limite ou no interior da região experimental.
 
 ---
 
@@ -91,26 +91,14 @@ otimo_bbd(fit, objetivo = "min")
 ponto_estacionario_bbd(fit)
 ```
 
-Retorna:
-
-- coordenadas do ponto  
-- classificação (máximo, mínimo ou sela)  
-- autovalores  
-- resposta estimada  
-
-📌 Observação:
-
-- O ponto estacionário é obtido analiticamente a partir do modelo  
-- O ponto ótimo é obtido por otimização numérica  
-- Nem sempre coincidem
-
 ---
 
-### 7. Avaliação do ponto estacionário em relação ao objetivo
+### 7. Avaliação do ponto estacionário
 
 ```r
 avaliar_ponto_estacionario_bbd(fit, objetivo = "max")
 avaliar_ponto_estacionario_bbd(fit, objetivo = "min")
+```
 
 ---
 
@@ -119,7 +107,7 @@ avaliar_ponto_estacionario_bbd(fit, objetivo = "min")
 ```r
 pareto_bbd(fit)
 superficie_bbd(fit, "A", "B")
-contorno_bbd(fit, "A", "B")
+contorno_bbd(fit, "A", "B", objetivo = "max")
 ```
 
 ---
@@ -128,45 +116,35 @@ contorno_bbd(fit, "A", "B")
 
 ### Exportação rápida
 
-```r
-exportar_excel_bbd(fit)
+`# Exportação (maximizar)
+
+``r
+exportar_excel_bbd(fit, objetivo = "max")
+
+
 ```
+# Para minimizar a resposta
 
-Inclui:
-
-- Dados  
-- Métricas  
-- ANOVA  
-- Coeficientes  
-- Efeitos  
-- Ponto ótimo  
-- Ponto estacionário  
-
+``r
+exportar_excel_bbd(fit, objetivo = "min")
+```
 ---
 
 ### Exportação completa
 
 ```r
-exportar_excel_completo_bbd(fit)
+exportar_excel_completo_bbd(fit, objetivo = "max")
+
+# Para minimizar a resposta
+```r
+exportar_excel_completo_bbd(fit, objetivo = "min")
 ```
 
-Inclui tudo da versão anterior, além de:
-
-- Gráfico de Pareto  
-- Superfícies de resposta  
-- Gráficos de contorno  
-
----
-
-## Sobre o Box-Behnken
-
-O planejamento Box-Behnken:
-
-- utiliza níveis codificados (-1, 0, +1)  
-- não possui pontos axiais  
-- concentra os experimentos na região central  
-- é eficiente para ajuste de modelos quadráticos  
-- permite análise completa de superfícies de resposta  
+📌 A aba "Ótimo" inclui automaticamente:
+- coordenadas ótimas  
+- valor da resposta  
+- status de convergência  
+- observação indicando limite ou interior da região experimental  
 
 ---
 

@@ -180,6 +180,46 @@ exportar_excel_completo_bbd <- function(fit,
     "Resposta"
   }
 
+  mensagem_otimo_excel <- function(ot, fit, fatores) {
+
+    if (!is.null(ot$mensagem) && nzchar(ot$mensagem)) {
+      return(ot$mensagem)
+    }
+
+    if (is.null(ot$ponto) || any(!is.finite(as.numeric(ot$ponto)))) {
+      return("")
+    }
+
+    lim_inf <- vapply(
+      fatores,
+      function(f) min(fit$dados[[f]], na.rm = TRUE),
+      numeric(1)
+    )
+
+    lim_sup <- vapply(
+      fatores,
+      function(f) max(fit$dados[[f]], na.rm = TRUE),
+      numeric(1)
+    )
+
+    ponto <- as.numeric(ot$ponto)
+    names(ponto) <- names(ot$ponto)
+
+    tol_limite <- 1e-6
+
+    no_limite <- any(
+      abs(ponto - lim_inf) <= tol_limite |
+        abs(ponto - lim_sup) <= tol_limite,
+      na.rm = TRUE
+    )
+
+    if (isTRUE(no_limite)) {
+      "Ótimo localizado no limite da região experimental."
+    } else {
+      "Ótimo localizado no interior da região experimental."
+    }
+  }
+
   interpretar_autovalores_excel <- function(autovalores) {
     if (exists("interpretar_autovalores_bbd", mode = "function")) {
       return(interpretar_autovalores_bbd(autovalores))
@@ -395,7 +435,20 @@ exportar_excel_completo_bbd <- function(fit,
       check.names = FALSE
     )
 
-    otimo_df <- rbind(df_objetivo, df_ponto, df_resposta, df_conv, df_valor)
+    df_obs <- data.frame(
+      Item = "Observação",
+      Valor = mensagem_otimo_excel(ot, fit, fatores),
+      check.names = FALSE
+    )
+
+    otimo_df <- rbind(
+      df_objetivo,
+      df_ponto,
+      df_resposta,
+      df_conv,
+      df_valor,
+      df_obs
+    )
 
     openxlsx::addWorksheet(wb, "Ótimo")
     openxlsx::writeData(wb, "Ótimo", otimo_df)
@@ -672,7 +725,11 @@ exportar_excel_completo_bbd <- function(fit,
 
         grDevices::png(tmp_cont, width = 2200, height = 1400, res = 220)
         graphics::par(cex = 1.25, cex.axis = 1.1, cex.lab = 1.15, cex.main = 1.2)
-        contorno_bbd(fit, x1 = x_plot, x2 = y_plot)
+        contorno_bbd(
+          fit,
+          x1 = x_plot,
+          x2 = y_plot
+        )
         grDevices::dev.off()
 
         aba_cont <- nome_aba_seguro("Cont", x_plot, y_plot)
@@ -695,7 +752,8 @@ exportar_excel_completo_bbd <- function(fit,
         openxlsx::insertImage(
           wb, aba_cont, tmp_cont,
           startRow = 3, startCol = 2,
-          width = 11, height = 7, units = "in"
+          width = 11, height = 7,
+          units = "in"
         )
       }
     }

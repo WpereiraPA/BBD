@@ -96,6 +96,26 @@ otimo_bbd <- function(fit, objetivo = "max") {
       valor_otimizado <- resultado$value
     }
   }
+  # Verifica se o ponto ótimo está no limite da região experimental
+  tol_limite <- 1e-6
+
+  no_limite <- any(
+    abs(ponto_otimo - (-1)) <= tol_limite |
+      abs(ponto_otimo - 1) <= tol_limite,
+    na.rm = TRUE
+  )
+
+  localizacao <- if (no_limite) {
+    "limite"
+  } else {
+    "interior"
+  }
+
+  mensagem <- if (no_limite) {
+    "Ótimo localizado no limite da região experimental."
+  } else {
+    "Ótimo localizado no interior da região experimental."
+  }
 
   saida <- list(
     ponto = ponto_otimo,
@@ -103,6 +123,8 @@ otimo_bbd <- function(fit, objetivo = "max") {
     convergencia = convergencia,
     valor_otimizado = valor_otimizado,
     objetivo = objetivo,
+    localizacao = localizacao,
+    mensagem = mensagem,
     nome_resposta = fit$nome_resposta
   )
 

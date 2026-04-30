@@ -23,6 +23,11 @@ print.otimo_bbd <- function(x, digits = 4, ...) {
                    "Falha na convergência.")
   cat(status, "\n")
 
+  if (!is.null(x$mensagem)) {
+    cat("\nObservação:\n")
+    cat(x$mensagem, "\n")
+  }
+
   # Comparação com ponto estacionário
   if (!is.null(x$ponto_estacionario)) {
     dif <- sum(abs(unlist(x$ponto) - unlist(x$ponto_estacionario)))
