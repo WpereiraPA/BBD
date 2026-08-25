@@ -3,7 +3,7 @@
 #' @param fit objeto da classe bbd_fit
 #' @param arquivo nome do arquivo a ser salvo, sem extensão
 #' @param formato "txt" ou "doc"
-#' @param tipo_otimo NULL para não incluir ótimo, "min" para minimizar
+#' @param objetivo NULL para não incluir ótimo, "min" para minimizar
 #'   a resposta ou "max" para maximizar
 #'
 #' @return invisivelmente, o caminho completo do arquivo gerado
@@ -11,7 +11,7 @@
 exportar_relatorio_bbd <- function(fit,
                                    arquivo = "Relatorio_BBD",
                                    formato = "txt",
-                                   tipo_otimo = NULL) {
+                                   objetivo = NULL) {
 
   if (!inherits(fit, "bbd_fit")) {
     stop("O objeto precisa ser da classe 'bbd_fit'.")
@@ -21,8 +21,8 @@ exportar_relatorio_bbd <- function(fit,
     stop("O formato deve ser 'txt' ou 'doc'.")
   }
 
-  if (!is.null(tipo_otimo) && !tipo_otimo %in% c("min", "max")) {
-    stop("tipo_otimo deve ser NULL, 'min' ou 'max'.")
+  if (!is.null(objetivo) && !objetivo %in% c("min", "max")) {
+    stop("O argumento 'objetivo' deve ser NULL, 'min' ou 'max'.")
   }
 
   pasta_destino <- file.path(Sys.getenv("USERPROFILE"), "Desktop", "BBD_Relatorios")
@@ -61,7 +61,7 @@ exportar_relatorio_bbd <- function(fit,
 
   an$Termo <- rownames(an)
   rownames(an) <- NULL
-  an <- an[, c("Termo", "DV", "Sum Sq", "Mean Sq", "F value", "Pr(>F)")]
+  an <- an[, c("Termo", "Df", "Sum Sq", "Mean Sq", "F value", "Pr(>F)")]
 
   beta <- stats::coef(fit$modelo)
   nomes <- names(beta)
@@ -78,61 +78,49 @@ exportar_relatorio_bbd <- function(fit,
   }
 
   otimo_out <- NULL
+  ot_mensagem <- NULL
 
-  if (!is.null(tipo_otimo)) {
-    fatores <- fit$fatores
+  if (!is.null(objetivo)) {
+    if (exists("otimo_bbd", mode = "function")) {
+      ot <- tryCatch(
+        otimo_bbd(fit, objetivo = objetivo),
+        error = function(e) {
+          warning("Erro ao calcular o ótimo: ", e$message)
+          NULL
+        }
+      )
 
-    if (length(fatores) != 2) {
-      warning("O cálculo do ótimo previsto está implementado apenas para 2 fatores.")
-    } else {
-      x1 <- fatores[1]
-      x2 <- fatores[2]
-
-      lim_inf <- c(min(fit$dados[[x1]], na.rm = TRUE), min(fit$dados[[x2]], na.rm = TRUE))
-      lim_sup <- c(max(fit$dados[[x1]], na.rm = TRUE), max(fit$dados[[x2]], na.rm = TRUE))
-
-      f_obj <- function(par) {
-        novo <- as.data.frame(matrix(0, nrow = 1, ncol = length(fatores)))
-        names(novo) <- fatores
-        novo[[x1]] <- par[1]
-        novo[[x2]] <- par[2]
-
-        pred <- stats::predict(fit$modelo, newdata = novo)
-
-        if (tipo_otimo == "min") {
-          pred
+      if (!is.null(ot)) {
+        nome_resp <- if (!is.null(fit$nome_resposta) && nzchar(fit$nome_resposta)) {
+          fit$nome_resposta
+        } else if (!is.null(fit$resposta) && nzchar(fit$resposta)) {
+          fit$resposta
         } else {
-          -pred
+          "Resposta"
+        }
+
+        termos <- c(names(ot$ponto), nome_resp)
+        valores <- c(as.numeric(ot$ponto), as.numeric(ot$resposta))
+
+        otimo_out <- data.frame(
+          Termo = termos,
+          Valor = valores,
+          stringsAsFactors = FALSE
+        )
+
+        if (!is.null(ot$mensagem)) {
+          ot_mensagem <- ot$mensagem
+        } else {
+          lim_inf <- vapply(fit$fatores, function(f) min(fit$dados[[f]], na.rm = TRUE), numeric(1))
+          lim_sup <- vapply(fit$fatores, function(f) max(fit$dados[[f]], na.rm = TRUE), numeric(1))
+          tol <- 1e-6
+          p <- as.numeric(ot$ponto)
+          no_limite <- any(abs(p - lim_inf) <= tol | abs(p - lim_sup) <= tol, na.rm = TRUE)
+          ot_mensagem <- ifelse(no_limite, "Ótimo localizado no limite da região experimental.", "Ótimo localizado no interior da região experimental.")
         }
       }
-
-      inicio <- c(
-        mean(c(lim_inf[1], lim_sup[1])),
-        mean(c(lim_inf[2], lim_sup[2]))
-      )
-
-      res <- stats::optim(
-        par = inicio,
-        fn = f_obj,
-        method = "L-BFGS-B",
-        lower = lim_inf,
-        upper = lim_sup
-      )
-
-      x_ot <- res$par[1]
-      y_ot <- res$par[2]
-
-      novo_ot <- as.data.frame(matrix(0, nrow = 1, ncol = length(fatores)))
-      names(novo_ot) <- fatores
-      novo_ot[[x1]] <- x_ot
-      novo_ot[[x2]] <- y_ot
-
-      resposta_prevista <- stats::predict(fit$modelo, newdata = novo_ot)
-
-      otimo_out <- data.frame(
-        Termo = c(x1, x2, fit$resposta),
-        Valor = c(x_ot, y_ot, as.numeric(resposta_prevista))
-      )
+    } else {
+      warning("A função 'otimo_bbd' não foi encontrada no ambiente. O ótimo não será incluído.")
     }
   }
 
@@ -199,7 +187,7 @@ exportar_relatorio_bbd <- function(fit,
     cat("ÓTIMO PREVISTO PELO MODELO\n")
     cat("----------------------------------------\n")
 
-    if (tipo_otimo == "min") {
+    if (objetivo == "min") {
       cat("Objetivo considerado: minimizar a resposta.\n\n")
     } else {
       cat("Objetivo considerado: maximizar a resposta.\n\n")
@@ -209,6 +197,10 @@ exportar_relatorio_bbd <- function(fit,
     otimo_imp$Valor <- fmt(otimo_imp$Valor, 5)
 
     print(otimo_imp, row.names = FALSE, right = TRUE)
+
+    if (!is.null(ot_mensagem)) {
+      cat("\nObservação: ", ot_mensagem, "\n", sep = "")
+    }
     cat("\n")
   }
 
@@ -226,7 +218,7 @@ exportar_relatorio_bbd <- function(fit,
   cat("Os coeficientes mostram a direção e a intensidade da influência dos fatores.\n")
   cat("Os efeitos estimados facilitam a interpretação prática da magnitude das mudanças.\n")
   if (!is.null(otimo_out)) {
-    cat("O ponto ótimo previsto foi calculado dentro da região experimental.\n")
+    cat("O ponto ótimo previsto foi calculado com base no modelo ajustado.\n")
   }
   cat("\nRelatório gerado automaticamente pelo pacote BBD.\n")
 

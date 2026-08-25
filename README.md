@@ -21,7 +21,8 @@ Com ele, você pode:
 - gerar gráficos:
   - Pareto  
   - superfície de resposta  
-  - contorno  
+  - contorno 
+  -exportar relatórios textuais completos (.txt ou .doc) com cálculo de ótimo
 - exportar resultados para Excel (versão rápida e completa)  
 
 ---
@@ -111,6 +112,17 @@ contorno_bbd(fit, "A", "B", objetivo = "max")
 ```
 
 ---
+
+## Exportação de Relatórios Textuais
+
+Você pode exportar um relatório estruturado contendo a ANOVA, coeficientes, efeitos e o cálculo do ponto ótimo.
+
+```r
+# Exportar relatório em .txt (com maximização)
+exportar_relatorio_bbd(fit, objetivo = "max")
+
+# Exportar relatório em .doc (com minimização)
+exportar_relatorio_bbd(fit, formato = "doc", objetivo = "min")
 
 ## Exportação para Excel
 
