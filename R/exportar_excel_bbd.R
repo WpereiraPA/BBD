@@ -405,6 +405,9 @@ exportar_excel_completo_bbd <- function(fit,
   }
 
   if (!is.null(ot)) {
+    # Função auxiliar para forçar a vírgula nas strings
+    fmt_num <- function(x) format(round(as.numeric(x), 4), decimal.mark = ",", nsmall = 4, trim = TRUE)
+
     df_objetivo <- data.frame(
       Item = "Objetivo",
       Valor = ifelse(!is.null(ot$objetivo) && ot$objetivo == "min", "Minimizar", "Maximizar"),
@@ -413,13 +416,13 @@ exportar_excel_completo_bbd <- function(fit,
 
     df_ponto <- data.frame(
       Item = names(ot$ponto),
-      Valor = as.numeric(ot$ponto),
+      Valor = fmt_num(ot$ponto),
       check.names = FALSE
     )
 
     df_resposta <- data.frame(
       Item = nome_resposta,
-      Valor = as.numeric(ot$resposta),
+      Valor = fmt_num(ot$resposta),
       check.names = FALSE
     )
 
@@ -431,7 +434,7 @@ exportar_excel_completo_bbd <- function(fit,
 
     df_valor <- data.frame(
       Item = "Valor otimizado",
-      Valor = as.numeric(ot$valor_otimizado),
+      Valor = fmt_num(ot$valor_otimizado),
       check.names = FALSE
     )
 
@@ -506,7 +509,7 @@ exportar_excel_completo_bbd <- function(fit,
       ),
       Valor = c(
         pe$classificacao,
-        round(pe$resposta_estimada, 4),
+        format(round(pe$resposta_estimada, 4), decimal.mark = ",", nsmall = 4, trim = TRUE),
         status_pe
       ),
       check.names = FALSE,
@@ -637,7 +640,7 @@ exportar_excel_completo_bbd <- function(fit,
     openxlsx::writeData(
       wb,
       "Pareto",
-      enc2utf8("Gráfico de Pareto dos efeitos"),
+      enc2utf8("Gráfico dos Efeitos (Teste F)"),
       startRow = 1,
       startCol = 2
     )
